@@ -1,0 +1,2 @@
+ALTER TABLE `user` ADD COLUMN `real_name` VARCHAR(50) DEFAULT NULL COMMENT 'Real Name' AFTER `password`;
+ALTER TABLE `user` ADD COLUMN `phone` VARCHAR(20) DEFAULT NULL COMMENT 'Phone Number' AFTER `real_name`;

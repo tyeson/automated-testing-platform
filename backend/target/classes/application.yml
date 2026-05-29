@@ -1,0 +1,41 @@
+server:
+  port: 8080
+  servlet:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+spring:
+  profiles:
+    active: dev
+  application:
+    name: automated-testing-platform
+  jackson:
+    serialization:
+      write-dates-as-timestamps: false
+    default-property-inclusion: non_null
+  http:
+    encoding:
+      charset: UTF-8
+      enabled: true
+      force: true
+
+# JWT Configuration
+jwt:
+  secret: ThisIsASecureJWTSecretKeyForAutomatedTestingPlatform2026!
+  expiration: 86400000
+
+# MyBatis Plus Configuration
+mybatis-plus:
+  mapper-locations: classpath*:/mapper/**/*.xml
+  type-aliases-package: com.testplatform.entity
+  configuration:
+    map-underscore-to-camel-case: true
+    log-impl: org.apache.ibatis.logging.stdout.StdOutImpl
+
+# Logging
+logging:
+  level:
+    com.testplatform: debug
+    org.springframework.security: debug
