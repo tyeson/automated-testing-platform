@@ -1,12 +1,14 @@
 export type ExecutionStatus = 'PENDING' | 'RUNNING' | 'SUCCESS' | 'FAILED' | 'TIMEOUT'
 
+export type TriggerType = 'MANUAL' | 'SCHEDULED' | 'JENKINS' | 'API'
+
 export interface ExecutionRecord {
   id: number
   projectId: number
   projectName: string
   suiteId: number
   suiteName: string
-  triggerType: 'manual' | 'scheduled' | 'jenkins' | 'api'
+  triggerType: TriggerType | 'manual' | 'scheduled' | 'jenkins' | 'api'
   status: ExecutionStatus
   totalCases: number
   passedCases: number
@@ -17,6 +19,8 @@ export interface ExecutionRecord {
   duration: number
   environment: string
   creator: string
+  screenshots: string[]
+  videoUrl: string
 }
 
 export interface ExecutionLog {
@@ -50,4 +54,17 @@ export interface ExecuteParams {
   suiteId?: number
   environment: string
   projectId: number
+}
+
+export interface TriggerExecutionParams {
+  projectId: number
+  caseIds?: number[]
+  suiteId?: number
+  triggerType: TriggerType
+  environment: string
+}
+
+export interface ExecutionStatusResponse {
+  status: ExecutionStatus
+  progress: number
 }

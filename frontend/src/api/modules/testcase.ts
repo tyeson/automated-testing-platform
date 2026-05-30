@@ -50,7 +50,7 @@ export function batchDeleteTestCases(ids: number[]) {
 
 export function getSuiteList(projectId: number) {
   return request<TestSuite[]>({
-    url: `/testcase/suites`,
+    url: `/testcases/suites`,
     method: 'GET',
     params: { projectId }
   })
@@ -58,7 +58,7 @@ export function getSuiteList(projectId: number) {
 
 export function createSuite(data: Partial<TestSuite>) {
   return request({
-    url: '/testcase/suite',
+    url: '/testcases/suites',
     method: 'POST',
     data
   })
@@ -66,7 +66,7 @@ export function createSuite(data: Partial<TestSuite>) {
 
 export function updateSuite(id: number, data: Partial<TestSuite>) {
   return request({
-    url: `/testcase/suite/${id}`,
+    url: `/testcases/suites/${id}`,
     method: 'PUT',
     data
   })
@@ -74,7 +74,7 @@ export function updateSuite(id: number, data: Partial<TestSuite>) {
 
 export function deleteSuite(id: number) {
   return request({
-    url: `/testcase/suite/${id}`,
+    url: `/testcases/suites/${id}`,
     method: 'DELETE'
   })
 }

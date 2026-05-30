@@ -1,10 +1,18 @@
 import request from '@/api'
-import type { ExecutionRecord, ExecutionLog, ExecutionParams, ExecuteParams } from '@/types/execution'
+import type { ExecutionRecord, ExecutionLog, ExecutionParams, ExecuteParams, TriggerExecutionParams, ExecutionStatusResponse } from '@/types/execution'
 import type { PageResult } from '@/types/common'
 
 export function executeTests(data: ExecuteParams) {
   return request<{ executionId: number }>({
     url: '/executions',
+    method: 'POST',
+    data
+  })
+}
+
+export function triggerExecution(data: TriggerExecutionParams) {
+  return request<{ executionId: number }>({
+    url: '/executions/trigger',
     method: 'POST',
     data
   })
@@ -40,7 +48,7 @@ export function stopExecution(executionId: number) {
 }
 
 export function getExecutionStatus(executionId: number) {
-  return request<{ status: string; progress: number }>({
+  return request<ExecutionStatusResponse>({
     url: `/executions/${executionId}/status`,
     method: 'GET'
   })

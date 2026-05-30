@@ -125,22 +125,8 @@ async function loadReports() {
   try {
     const res = await getReportList({ page: 1, pageSize: 10 })
     reports.value = res.data?.records || []
-  } catch {
-    reports.value = [
-      {
-        id: 1,
-        projectName: '用户服务',
-        suiteName: '回归测试',
-        status: 'SUCCESS',
-        totalCases: 120,
-        passedCases: 115,
-        failedCases: 5,
-        passRate: 95,
-        duration: '15分30秒',
-        startTime: '2026-05-29 10:30'
-      },
-      { id: 2, projectName: '订单系统', suiteName: '冒烟测试', status: 'FAILED', totalCases: 25, passedCases: 20, failedCases: 5, passRate: 80, duration: '5分20秒', startTime: '2026-05-29 09:15' }
-    ]
+  } catch (err) {
+    console.error('加载报告列表失败', err)
   } finally {
     loading.value = false
   }

@@ -21,18 +21,18 @@
 </template>
 
 <script setup lang="ts">
-import { ref, reactive } from 'vue'
+import { ref, reactive, getCurrentInstance } from 'vue'
 import { useRouter, useRoute } from 'vue-router'
 import type { FormInstance } from 'element-plus'
 import { User, Lock } from '@element-plus/icons-vue'
 import { login } from '@/api/modules/auth'
 import { useUserStore } from '@/stores/user'
-import { ElMessage } from 'element-plus'
 import type { LoginParams } from '@/types/user'
 
 const router = useRouter()
 const route = useRoute()
 const userStore = useUserStore()
+const { proxy } = getCurrentInstance()!
 
 const formRef = ref<FormInstance>()
 const loading = ref(false)
@@ -67,12 +67,12 @@ async function handleLogin() {
       createTime: '',
       updateTime: ''
     })
-    ElMessage.success('登录成功')
+    proxy!.$message.success('登录成功')
 
     const redirect = (route.query.redirect as string) || '/'
     router.push(redirect)
   } catch {
-    ElMessage.error('登录失败，请检查用户名和密码')
+    proxy!.$message.error('登录失败，请检查用户名和密码')
   } finally {
     loading.value = false
   }

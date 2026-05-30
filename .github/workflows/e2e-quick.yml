@@ -1,0 +1,103 @@
+name: E2E Quick Tests
+
+on:
+  push:
+    branches: [ main, develop ]
+    paths-ignore:
+      - '**.md'
+      - 'docs/**'
+      - '.gitignore'
+  pull_request:
+    branches: [ main, develop ]
+  workflow_dispatch:
+
+jobs:
+  quick-tests:
+    name: Quick Smoke Tests
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    
+    services:
+      mysql:
+        image: mysql:8.0
+        env:
+          MYSQL_ROOT_PASSWORD: Szna123456.
+          MYSQL_DATABASE: test_platform
+        ports:
+          - 3306:3306
+        options: >-
+          --health-cmd="mysqladmin ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+      
+      redis:
+        image: redis:7-alpine
+        ports:
+          - 6379:6379
+        options: >-
+          --health-cmd="redis-cli ping"
+          --health-interval=10s
+          --health-timeout=5s
+          --health-retries=3
+
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '20'
+          cache: 'npm'
+          cache-dependency-path: frontend/package-lock.json
+
+      - name: Setup Java
+        uses: actions/setup-java@v4
+        with:
+          java-version: '17'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Install dependencies
+        run: |
+          cd frontend && npm ci
+          cd ../e2e && npm ci && npx playwright install chromium --with-deps
+
+      - name: Initialize database
+        run: |
+          for sql in schema.sql phase2_schema.sql alter_user.sql; do
+            mysql -h 127.0.0.1 -u root -pSzna123456. test_platform < backend/src/main/resources/db/$sql || true
+          done
+
+      - name: Start backend
+        working-directory: ./backend
+        run: |
+          mvn clean package -DskipTests -q
+          java -jar target/*.jar --spring.profiles.active=dev &
+          sleep 30
+
+      - name: Start frontend
+        working-directory: ./frontend
+        run: |
+          npm run build
+          npx vite preview --port 5173 &
+          sleep 10
+
+      - name: Run critical tests only
+        id: run-tests
+        working-directory: ./e2e
+        continue-on-error: true
+        run: npx playwright test 01-login.spec.ts 02-dashboard.spec.ts 08-api-intercept.spec.ts --reporter=list
+
+      - name: Upload report
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: quick-test-report
+          path: e2e/playwright-report/
+          retention-days: 3
+
+      - name: Check result
+        if: steps.run-tests.outcome != 'success'
+        run: exit 1

@@ -5,9 +5,13 @@ import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.testplatform.common.PageResult;
 import com.testplatform.common.Result;
 import com.testplatform.entity.TestCase;
+import com.testplatform.entity.TestSuite;
 import com.testplatform.service.ITestCaseService;
+import com.testplatform.service.ITestSuiteService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
+
+import java.util.List;
 
 @RestController
 @RequestMapping("/api/testcases")
@@ -15,6 +19,7 @@ import org.springframework.web.bind.annotation.*;
 public class TestCaseController {
 
   private final ITestCaseService testCaseService;
+  private final ITestSuiteService testSuiteService;
 
   @GetMapping
   public Result<PageResult<TestCase>> list(
@@ -59,6 +64,33 @@ public class TestCaseController {
   @DeleteMapping("/{id}")
   public Result<Void> delete(@PathVariable Long id) {
     testCaseService.removeById(id);
+    return Result.success();
+  }
+
+  @GetMapping("/suites")
+  public Result<List<TestSuite>> listSuites(@RequestParam Long projectId) {
+    LambdaQueryWrapper<TestSuite> wrapper = new LambdaQueryWrapper<>();
+    wrapper.eq(TestSuite::getProjectId, projectId);
+    wrapper.orderByDesc(TestSuite::getCreateTime);
+    return Result.success(testSuiteService.list(wrapper));
+  }
+
+  @PostMapping("/suites")
+  public Result<Void> createSuite(@RequestBody TestSuite suite) {
+    testSuiteService.save(suite);
+    return Result.success();
+  }
+
+  @PutMapping("/suites/{id}")
+  public Result<Void> updateSuite(@PathVariable Long id, @RequestBody TestSuite suite) {
+    suite.setId(id);
+    testSuiteService.updateById(suite);
+    return Result.success();
+  }
+
+  @DeleteMapping("/suites/{id}")
+  public Result<Void> deleteSuite(@PathVariable Long id) {
+    testSuiteService.removeById(id);
     return Result.success();
   }
 }

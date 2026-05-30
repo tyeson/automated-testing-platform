@@ -1,6 +1,5 @@
 import { createRouter, createWebHistory } from 'vue-router'
 import type { RouteRecordRaw } from 'vue-router'
-import MainLayout from '@/views/layout/MainLayout.vue'
 
 const routes: RouteRecordRaw[] = [
   {
@@ -11,7 +10,7 @@ const routes: RouteRecordRaw[] = [
   },
   {
     path: '/',
-    component: MainLayout,
+    component: () => import('@/views/layout/MainLayout.vue'),
     redirect: '/dashboard',
     meta: { requiresAuth: true },
     children: [
@@ -74,6 +73,18 @@ const routes: RouteRecordRaw[] = [
             name: 'RoleManagement',
             component: () => import('@/views/system/role/index.vue'),
             meta: { title: '角色管理' }
+          },
+          {
+            path: 'environment',
+            name: 'EnvironmentManagement',
+            component: () => import('@/views/system/environment/index.vue'),
+            meta: { title: '环境管理' }
+          },
+          {
+            path: 'jenkins',
+            name: 'JenkinsIntegration',
+            component: () => import('@/views/system/jenkins/index.vue'),
+            meta: { title: 'Jenkins集成' }
           }
         ]
       }

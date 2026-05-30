@@ -12,7 +12,20 @@ const service: AxiosInstance = axios.create({
   }
 })
 
-// Request interceptor
+function showMessage(type: 'error' | 'success' | 'warning' | 'info', msg: string) {
+  try {
+    const app = document.querySelector('#app')?.__vue_app__
+    if (app) {
+      const $message = app.config.globalProperties.$message
+      setTimeout(() => $message[type](msg), 0)
+      return
+    }
+  } catch (e) {
+    console.error('[showMessage] error:', e)
+  }
+  ElMessage[type](msg)
+}
+
 service.interceptors.request.use(
   (config) => {
     const token = localStorage.getItem('token')
@@ -27,14 +40,12 @@ service.interceptors.request.use(
   }
 )
 
-// Response interceptor
 service.interceptors.response.use(
   (response: AxiosResponse<ApiResponse>) => {
     const res = response.data
     if (res.code !== 200) {
-      ElMessage.error(res.message || '请求失败')
+      showMessage('error', res.message || '请求失败')
 
-      // Token expired
       if (res.code === 401) {
         localStorage.removeItem('token')
         localStorage.removeItem('refreshToken')
@@ -46,14 +57,16 @@ service.interceptors.response.use(
     return res as any
   },
   (error) => {
-    console.error('Response error:', error)
     if (error.response?.status === 401) {
       localStorage.removeItem('token')
       localStorage.removeItem('refreshToken')
-      router.push('/login')
-      ElMessage.error('登录已过期，请重新登录')
+      const msg = error.response?.data?.message || '登录已过期，请重新登录'
+      showMessage('error', msg)
+      if (!window.location.pathname.includes('/login')) {
+        router.push('/login')
+      }
     } else {
-      ElMessage.error(error.message || '网络异常')
+      showMessage('error', error.message || '网络异常')
     }
     return Promise.reject(error)
   }

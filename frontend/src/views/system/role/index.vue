@@ -104,13 +104,8 @@ async function loadRoles() {
     const res = await getRoleList({ page: pagination.page, pageSize: pagination.pageSize })
     roles.value = res.data?.records || []
     pagination.total = res.data?.total || 0
-  } catch {
-    roles.value = [
-      { id: 1, name: '超级管理员', code: 'admin', description: '系统最高权限', status: 1, permissionIds: [], createTime: '2026-01-01', updateTime: '2026-01-01' },
-      { id: 2, name: '测试经理', code: 'test_manager', description: '测试计划与执行管理', status: 1, permissionIds: [], createTime: '2026-01-01', updateTime: '2026-01-01' },
-      { id: 3, name: '测试工程师', code: 'test_engineer', description: '编写和执行用例', status: 1, permissionIds: [], createTime: '2026-01-01', updateTime: '2026-01-01' }
-    ]
-    pagination.total = 3
+  } catch (err) {
+    console.error('加载角色列表失败', err)
   } finally {
     loading.value = false
   }
@@ -137,10 +132,8 @@ async function handleSubmit() {
     }
     dialogVisible.value = false
     loadRoles()
-  } catch {
-    dialogVisible.value = false
-    ElMessage.success('操作成功')
-    loadRoles()
+  } catch (err) {
+    console.error('操作角色失败', err)
   }
 }
 
@@ -150,9 +143,8 @@ async function handleDelete(row: Role) {
     await deleteRole(row.id)
     ElMessage.success('删除成功')
     loadRoles()
-  } catch {
-    ElMessage.success('删除成功')
-    loadRoles()
+  } catch (err) {
+    console.error('删除角色失败', err)
   }
 }
 
