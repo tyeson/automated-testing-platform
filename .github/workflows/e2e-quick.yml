@@ -66,7 +66,7 @@ jobs:
 
       - name: Initialize database
         run: |
-          for sql in schema.sql phase2_schema.sql alter_user.sql; do
+          for sql in schema.sql phase2_schema.sql alter_user.sql alter_execution.sql; do
             mysql -h 127.0.0.1 -u root -pSzna123456. test_platform < backend/src/main/resources/db/$sql || true
           done
 

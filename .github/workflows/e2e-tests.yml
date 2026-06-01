@@ -70,6 +70,7 @@ jobs:
           mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_PASSWORD }} test_platform < backend/src/main/resources/db/schema.sql || true
           mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_PASSWORD }} test_platform < backend/src/main/resources/db/phase2_schema.sql || true
           mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_PASSWORD }} test_platform < backend/src/main/resources/db/alter_user.sql || true
+          mysql -h 127.0.0.1 -u root -p${{ secrets.MYSQL_PASSWORD }} test_platform < backend/src/main/resources/db/alter_execution.sql || true
 
       - name: Build and start backend
         working-directory: ./backend

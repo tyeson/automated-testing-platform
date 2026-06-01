@@ -1,0 +1,112 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.testplatform.mapper.ReportMapper">
+
+  <select id="countAllExecutions" resultType="long">
+    SELECT COUNT(*) FROM execution
+  </select>
+
+  <select id="countByStatus" resultType="long">
+    SELECT COUNT(*) FROM execution WHERE status = #{status}
+  </select>
+
+  <select id="countProjects" resultType="long">
+    SELECT COUNT(*) FROM project
+  </select>
+
+  <select id="trendByDay" resultType="java.util.LinkedHashMap">
+    SELECT
+      DATE_FORMAT(create_time, '%m/%d') AS date,
+      COUNT(*)                            AS total,
+      SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS passed,
+      SUM(CASE WHEN status = 'FAILED'  THEN 1 ELSE 0 END) AS failed
+    FROM execution
+    WHERE create_time &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+    GROUP BY DATE_FORMAT(create_time, '%m/%d')
+    ORDER BY date ASC
+  </select>
+
+  <select id="environmentStats" resultType="java.util.LinkedHashMap">
+    SELECT
+      COALESCE(NULLIF(environment, ''), 'UNSET') AS environment,
+      COUNT(*) AS totalExecutions,
+      SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS successCount
+    FROM execution
+    WHERE create_time &gt;= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY COALESCE(NULLIF(environment, ''), 'UNSET')
+    ORDER BY environment ASC
+  </select>
+
+  <select id="failureReasons" resultType="java.util.LinkedHashMap">
+    SELECT
+      CASE
+        WHEN error_message LIKE '%timeout%' OR error_message LIKE '%TIMEOUT%' OR error_message LIKE '%超时%' THEN '网络超时'
+        WHEN error_message LIKE '%Element%' OR error_message LIKE '%selector%' OR error_message LIKE '%元素%' OR error_message LIKE '%未找到%' THEN '元素未找到'
+        WHEN error_message LIKE '%Assertion%' OR error_message LIKE '%assert%' OR error_message LIKE '%断言%' OR error_message LIKE '%expected%' THEN '断言失败'
+        WHEN error_message LIKE '%connect%' OR error_message LIKE '%environment%' OR error_message LIKE '%不可用%' OR error_message LIKE '%connection%' THEN '环境不可用'
+        WHEN error_message LIKE '%data%' OR error_message LIKE '%null%' OR error_message LIKE '%数据%' THEN '数据异常'
+        ELSE '其他错误'
+      END AS reason,
+      COUNT(*) AS count
+    FROM execution_log
+    WHERE status = 'FAILED'
+      AND error_message IS NOT NULL
+      AND error_message != ''
+      AND start_time &gt;= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY reason
+    ORDER BY count DESC
+  </select>
+
+  <select id="projectExecutionRanking" resultType="java.util.LinkedHashMap">
+    SELECT
+      p.id   AS projectId,
+      p.name AS projectName,
+      COUNT(e.id) AS totalExecutions
+    FROM project p
+    LEFT JOIN execution e ON e.project_id = p.id
+    GROUP BY p.id, p.name
+    ORDER BY totalExecutions DESC
+    LIMIT 10
+  </select>
+
+  <select id="statusDistribution" resultType="java.util.LinkedHashMap">
+    SELECT status, COUNT(*) AS count
+    FROM execution
+    WHERE create_time &gt;= DATE_SUB(CURDATE(), INTERVAL 30 DAY)
+    GROUP BY status
+  </select>
+
+  <select id="fillMissingTrendDays" resultType="java.util.LinkedHashMap">
+    SELECT
+      DATE_FORMAT(date_list.day, '%m/%d') AS date,
+      COALESCE(t.total, 0)  AS total,
+      COALESCE(t.passed, 0) AS passed,
+      COALESCE(t.failed, 0) AS failed
+    FROM (
+      SELECT DATE_SUB(CURDATE(), INTERVAL n DAY) AS day
+      FROM (
+        SELECT 0 AS n UNION ALL SELECT 1 UNION ALL SELECT 2 UNION ALL SELECT 3
+        UNION ALL SELECT 4 UNION ALL SELECT 5 UNION ALL SELECT 6 UNION ALL SELECT 7
+        UNION ALL SELECT 8 UNION ALL SELECT 9 UNION ALL SELECT 10 UNION ALL SELECT 11
+        UNION ALL SELECT 12 UNION ALL SELECT 13 UNION ALL SELECT 14 UNION ALL SELECT 15
+        UNION ALL SELECT 16 UNION ALL SELECT 17 UNION ALL SELECT 18 UNION ALL SELECT 19
+        UNION ALL SELECT 20 UNION ALL SELECT 21 UNION ALL SELECT 22 UNION ALL SELECT 23
+        UNION ALL SELECT 24 UNION ALL SELECT 25 UNION ALL SELECT 26 UNION ALL SELECT 27
+        UNION ALL SELECT 28 UNION ALL SELECT 29
+      ) days
+      WHERE n &lt; #{days}
+    ) date_list
+    LEFT JOIN (
+      SELECT
+        DATE(create_time) AS day,
+        COUNT(*) AS total,
+        SUM(CASE WHEN status = 'SUCCESS' THEN 1 ELSE 0 END) AS passed,
+        SUM(CASE WHEN status = 'FAILED'  THEN 1 ELSE 0 END) AS failed
+      FROM execution
+      WHERE create_time &gt;= DATE_SUB(CURDATE(), INTERVAL #{days} DAY)
+      GROUP BY DATE(create_time)
+    ) t ON t.day = date_list.day
+    ORDER BY date_list.day ASC
+  </select>
+
+</mapper>

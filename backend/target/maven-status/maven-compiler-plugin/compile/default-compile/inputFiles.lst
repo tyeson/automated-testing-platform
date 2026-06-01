@@ -1,5 +1,6 @@
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\security\CustomUserDetailsService.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\config\MybatisPlusConfig.java
+D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\dto\ExecutionDetailVO.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\service\impl\TestCaseServiceImpl.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\entity\Report.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\service\impl\TestSuiteServiceImpl.java
@@ -77,3 +78,4 @@ D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\s
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\service\impl\JenkinsConfigServiceImpl.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\service\impl\ReportServiceImpl.java
 D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\controller\ExecutionController.java
+D:\workplace\automated-testing-platform\backend\src\main\java\com\testplatform\dto\ExecutionLogVO.java

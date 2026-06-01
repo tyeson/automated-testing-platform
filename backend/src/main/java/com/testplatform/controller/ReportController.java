@@ -4,13 +4,14 @@ import com.baomidou.mybatisplus.core.conditions.query.LambdaQueryWrapper;
 import com.baomidou.mybatisplus.extension.plugins.pagination.Page;
 import com.testplatform.common.PageResult;
 import com.testplatform.common.Result;
-import com.testplatform.entity.Execution;
 import com.testplatform.entity.Report;
-import com.testplatform.service.IExecutionService;
+import com.testplatform.mapper.ReportMapper;
 import com.testplatform.service.IReportService;
 import lombok.RequiredArgsConstructor;
 import org.springframework.web.bind.annotation.*;
 
+import java.math.BigDecimal;
+import java.math.RoundingMode;
 import java.util.*;
 
 @RestController
@@ -19,7 +20,7 @@ import java.util.*;
 public class ReportController {
 
   private final IReportService reportService;
-  private final IExecutionService executionService;
+  private final ReportMapper reportMapper;
 
   @GetMapping
   public Result<PageResult<Report>> list(
@@ -38,62 +39,105 @@ public class ReportController {
   @GetMapping("/dashboard")
   public Result<Map<String, Object>> getDashboardMetrics() {
     Map<String, Object> metrics = new HashMap<>();
-    long totalExecutions = executionService.count();
-    long successCount = executionService.count(new LambdaQueryWrapper<Execution>().eq(Execution::getStatus, "SUCCESS"));
-    long failCount = executionService.count(new LambdaQueryWrapper<Execution>().eq(Execution::getStatus, "FAILED"));
-    double successRate = totalExecutions > 0 ? (double) successCount / totalExecutions * 100 : 0;
-    double failRate = totalExecutions > 0 ? (double) failCount / totalExecutions * 100 : 0;
+    long totalExecutions = reportMapper.countAllExecutions();
+    long successCount = reportMapper.countByStatus("SUCCESS");
+    long failCount = reportMapper.countByStatus("FAILED");
+    long projectCount = reportMapper.countProjects();
+    long runningCount = reportMapper.countByStatus("RUNNING");
+    long pendingCount = reportMapper.countByStatus("PENDING");
+
+    double successRate = totalExecutions > 0
+        ? roundTo1Decimal((double) successCount * 100 / totalExecutions)
+        : 0.0;
+    double failRate = totalExecutions > 0
+        ? roundTo1Decimal((double) failCount * 100 / totalExecutions)
+        : 0.0;
+
     metrics.put("todayExecutions", totalExecutions);
-    metrics.put("successRate", Math.round(successRate * 10.0) / 10.0);
-    metrics.put("failRate", Math.round(failRate * 10.0) / 10.0);
-    metrics.put("projectCount", 0);
+    metrics.put("successCount", successCount);
+    metrics.put("failCount", failCount);
+    metrics.put("successRate", successRate);
+    metrics.put("failRate", failRate);
+    metrics.put("projectCount", projectCount);
+    metrics.put("runningCount", runningCount);
+    metrics.put("pendingCount", pendingCount);
     return Result.success(metrics);
   }
 
-@GetMapping("/trend")
+  @GetMapping("/trend")
   public Result<List<Map<String, Object>>> getTrendData(@RequestParam(defaultValue = "7") int days) {
-    List<Map<String, Object>> trendData = new ArrayList<>();
-    Calendar cal = Calendar.getInstance();
-    for (int i = days - 1; i >= 0; i--) {
-      cal.setTime(new Date());
-      cal.add(Calendar.DAY_OF_MONTH, -i);
-      String date = String.format("%02d/%02d", cal.get(Calendar.MONTH) + 1, cal.get(Calendar.DAY_OF_MONTH));
-      Map<String, Object> dayData = new HashMap<>();
-      dayData.put("date", date);
-      dayData.put("total", (int) (Math.random() * 100) + 50);
-      dayData.put("passed", (int) (Math.random() * 80) + 40);
-      dayData.put("failed", (int) (Math.random() * 20) + 5);
-      dayData.put("passRate", (int) (Math.random() * 20) + 80);
-      trendData.add(dayData);
+    int safeDays = Math.max(1, Math.min(days, 30));
+    List<Map<String, Object>> trendData = reportMapper.fillMissingTrendDays(safeDays);
+    for (Map<String, Object> day : trendData) {
+      long total = toLong(day.get("total"));
+      long passed = toLong(day.get("passed"));
+      long failed = toLong(day.get("failed"));
+      int passRate = total > 0
+          ? (int) Math.round(passed * 100.0 / total)
+          : 0;
+      day.put("passRate", passRate);
     }
     return Result.success(trendData);
   }
 
   @GetMapping("/environment")
   public Result<List<Map<String, Object>>> getEnvironmentAnalysis() {
-    List<Map<String, Object>> data = new ArrayList<>();
-    String[] envs = { "DEV", "TEST", "UAT", "PROD" };
-    for (String env : envs) {
-      Map<String, Object> item = new HashMap<>();
-      item.put("environment", env);
-      item.put("successRate", (int) (Math.random() * 20) + 80);
-      item.put("totalExecutions", (int) (Math.random() * 500) + 100);
-      data.add(item);
+    List<Map<String, Object>> rows = reportMapper.environmentStats();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Map<String, Object> row : rows) {
+      Map<String, Object> item = new LinkedHashMap<>();
+      item.put("environment", row.get("environment"));
+      long total = toLong(row.get("totalExecutions"));
+      long success = toLong(row.get("successCount"));
+      double successRate = total > 0
+          ? roundTo1Decimal(success * 100.0 / total)
+          : 0.0;
+      item.put("totalExecutions", total);
+      item.put("successCount", success);
+      item.put("successRate", successRate);
+      result.add(item);
     }
-    return Result.success(data);
+    return Result.success(result);
   }
 
   @GetMapping("/failure")
   public Result<List<Map<String, Object>>> getFailureAnalysis(@RequestParam(required = false) Long projectId) {
-    List<Map<String, Object>> data = new ArrayList<>();
-    String[] reasons = { "元素未找到", "网络超时", "断言失败", "数据异常", "环境不可用" };
-    for (String reason : reasons) {
-      Map<String, Object> item = new HashMap<>();
-      item.put("reason", reason);
-      item.put("count", (int) (Math.random() * 50) + 5);
-      data.add(item);
+    List<Map<String, Object>> rows = reportMapper.failureReasons();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Map<String, Object> row : rows) {
+      Map<String, Object> item = new LinkedHashMap<>();
+      item.put("reason", row.get("reason"));
+      item.put("count", toLong(row.get("count")));
+      result.add(item);
     }
-    return Result.success(data);
+    return Result.success(result);
+  }
+
+  @GetMapping("/ranking")
+  public Result<List<Map<String, Object>>> getProjectExecutionRanking() {
+    List<Map<String, Object>> rows = reportMapper.projectExecutionRanking();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Map<String, Object> row : rows) {
+      Map<String, Object> item = new LinkedHashMap<>();
+      item.put("projectId", row.get("projectId"));
+      item.put("projectName", row.get("projectName"));
+      item.put("totalExecutions", toLong(row.get("totalExecutions")));
+      result.add(item);
+    }
+    return Result.success(result);
+  }
+
+  @GetMapping("/status-distribution")
+  public Result<List<Map<String, Object>>> getStatusDistribution() {
+    List<Map<String, Object>> rows = reportMapper.statusDistribution();
+    List<Map<String, Object>> result = new ArrayList<>();
+    for (Map<String, Object> row : rows) {
+      Map<String, Object> item = new LinkedHashMap<>();
+      item.put("status", row.get("status"));
+      item.put("count", toLong(row.get("count")));
+      result.add(item);
+    }
+    return Result.success(result);
   }
 
   @GetMapping("/list")
@@ -128,5 +172,19 @@ public class ReportController {
   public Result<Void> delete(@PathVariable Long id) {
     reportService.removeById(id);
     return Result.success();
+  }
+
+  private static long toLong(Object o) {
+    if (o == null) return 0L;
+    if (o instanceof Number n) return n.longValue();
+    try {
+      return Long.parseLong(o.toString());
+    } catch (NumberFormatException ex) {
+      return 0L;
+    }
+  }
+
+  private static double roundTo1Decimal(double v) {
+    return BigDecimal.valueOf(v).setScale(1, RoundingMode.HALF_UP).doubleValue();
   }
 }

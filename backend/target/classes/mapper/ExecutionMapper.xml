@@ -1,0 +1,65 @@
+<?xml version="1.0" encoding="UTF-8" ?>
+<!DOCTYPE mapper PUBLIC "-//mybatis.org//DTD Mapper 3.0//EN" "http://mybatis.org/dtd/mybatis-3-mapper.dtd">
+<mapper namespace="com.testplatform.mapper.ExecutionMapper">
+
+  <select id="selectExecutionDetailPage" resultType="com.testplatform.dto.ExecutionDetailVO">
+    SELECT
+      e.id              AS id,
+      e.project_id      AS projectId,
+      p.name            AS projectName,
+      p.code            AS projectCode,
+      e.suite_id        AS suiteId,
+      s.name            AS suiteName,
+      e.case_id         AS caseId,
+      tc.name           AS caseName,
+      e.trigger_type    AS triggerType,
+      e.status          AS status,
+      e.total_count     AS totalCases,
+      e.pass_count      AS passedCases,
+      e.fail_count      AS failedCases,
+      0                 AS skippedCases,
+      e.start_time      AS startTime,
+      e.end_time        AS endTime,
+      e.create_time     AS createTime
+    FROM execution e
+    LEFT JOIN project p ON p.id = e.project_id
+    LEFT JOIN test_suite s ON s.id = e.suite_id
+    LEFT JOIN test_case tc ON tc.id = e.case_id
+    <where>
+      <if test="projectId != null">
+        AND e.project_id = #{projectId}
+      </if>
+      <if test="status != null and status != ''">
+        AND e.status = #{status}
+      </if>
+    </where>
+    ORDER BY e.create_time DESC
+  </select>
+
+  <select id="selectExecutionDetailById" resultType="com.testplatform.dto.ExecutionDetailVO">
+    SELECT
+      e.id              AS id,
+      e.project_id      AS projectId,
+      p.name            AS projectName,
+      p.code            AS projectCode,
+      e.suite_id        AS suiteId,
+      s.name            AS suiteName,
+      e.case_id         AS caseId,
+      tc.name           AS caseName,
+      e.trigger_type    AS triggerType,
+      e.status          AS status,
+      e.total_count     AS totalCases,
+      e.pass_count      AS passedCases,
+      e.fail_count      AS failedCases,
+      0                 AS skippedCases,
+      e.start_time      AS startTime,
+      e.end_time        AS endTime,
+      e.create_time     AS createTime
+    FROM execution e
+    LEFT JOIN project p ON p.id = e.project_id
+    LEFT JOIN test_suite s ON s.id = e.suite_id
+    LEFT JOIN test_case tc ON tc.id = e.case_id
+    WHERE e.id = #{id}
+  </select>
+
+</mapper>

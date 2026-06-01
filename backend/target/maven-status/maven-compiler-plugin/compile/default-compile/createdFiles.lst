@@ -37,7 +37,6 @@ com\testplatform\TestPlatformApplication.class
 com\testplatform\service\impl\TestCaseServiceImpl.class
 com\testplatform\controller\UserController.class
 com\testplatform\entity\Execution.class
-com\testplatform\controller\ExecutionController.class
 com\testplatform\entity\ExecutionLog.class
 com\testplatform\service\impl\ExecutionServiceImpl.class
 com\testplatform\security\JwtAuthenticationFilter.class
@@ -61,7 +60,6 @@ com\testplatform\entity\JenkinsConfig.class
 com\testplatform\config\MybatisPlusConfig.class
 com\testplatform\security\CustomUserDetailsService.class
 com\testplatform\common\PageResult.class
-com\testplatform\controller\ExecutionController$TriggerRequest.class
 com\testplatform\config\RedisConfig.class
 com\testplatform\mapper\RolePermissionMapper.class
 com\testplatform\controller\EnvironmentController.class
